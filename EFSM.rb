@@ -26,6 +26,7 @@ class EFSM
   attr_accessor :regs
   attr_accessor :cur_state
   attr_accessor :states
+  attr_accessor :inputs
 
  def initialize
    @states = []
@@ -47,6 +48,7 @@ class EFSM
       return [state, regs, ND, []]
     else
       t = applicable.first
+    puts "t: #{t}" if $DEBUG > 2
       
       return [
         t[:to], 
@@ -55,6 +57,10 @@ class EFSM
         t[:outpars].map{|e| eval_expr(e, pars, regs)}
       ]
     end
+  end
+
+  def complete?
+    return (@states != [] and @states.all?{|s| @inputs.all?{|x| @trans.find{|t| t[:from] == s and t[:input] == x}}})
   end
 
   def step!(input, pars)
@@ -70,5 +76,19 @@ class EFSM
       res << self.step!(i, p)
     end
     return res
+  end
+
+  def to_dot
+    str = []
+    str << "digraph M {"
+    @states.each do |s|
+      str << "\"#{s}\";"
+    end
+    @trans.each do |t|
+      puts "#{t}"
+      str << "\"#{t[:from]}\" -> \"#{t[:to]}\" [label=\"#{t[:input]}/#{t[:output]}\"]; "
+    end
+    str << "}"
+    return str
   end
 end
