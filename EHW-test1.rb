@@ -16,6 +16,11 @@ $m2.trans = [
   {from: 3, to: 0, input: "y", output: "1", update: [], outpars: [], guard: "true"},
 ]
 
+# 0 x/0 1 x/1 2
+# 1 x/0 1 x/1 2
+# 2 x/1 1 x/1 2
+# 3 x/1 3 x/1 2 
+
 $runex = EFSM.new
 $runex.states = ["s0", "s1", "s2"]
 $runex.s0 = "s0"
@@ -31,7 +36,7 @@ $runex.trans = [
 
 $ehw = EHW.new
 $ehw.bb = $m2
-$ehw.h = [["x", []], ["y", []]]
+$ehw.h = []
 $ehw.W = [[["x", []]], [["y", []]]]
 $ehw.inputs = ["x", "y"] # 1 -> 10, 2 -> 00, 3 -> 10, 4 -> 01
 
