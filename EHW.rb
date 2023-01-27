@@ -6,6 +6,13 @@ class HNDException < Exception
   end
 end
 
+class WNDException < Exception
+  attr_reader :w
+  def initialize(w)
+    @w = w
+  end
+end
+
 class EHW
   attr_accessor :h
   attr_accessor :W
@@ -30,6 +37,8 @@ class EHW
     @H = {}
     @domDelta = {}
     @omega = []
+    @omegaIn = []
+    @omegaOut = []
     @statesVisited = []
     @C = {}
     @LLoc = {}
@@ -82,18 +91,56 @@ class EHW
   end
 
   def checkhND
-    puts "checking h-ND..." if $DEBUG > 3
-    puts "checking h-ND lastHApplication = #{@lastHApplication}" if $DEBUG > 3
     return unless @lastHApplication
     (eta, pos) = @lastHApplication
     betav = @omega.slice(pos, @omega.length)
-    puts "checking h-ND betav = #{betav}" if $DEBUG > 3
     beta = betav.map{|i| i[0]}
     v = self.projecth(betav.map{|i| i[1]})
-    lloc = @LLoc[eta].find{|l| vline = @omega.slice(l, betav.length) ; vline.map{|i| i[0]} == beta and self.projecth(vline.map{|i| i[1]}) != v}
-    puts "checking h-ND lloc = #{lloc}" if $DEBUG > 3
+    lloc = @LLoc[eta].find{|l| vprime = @omega.slice(l, betav.length) ; vprime.map{|i| i[0]} == beta and self.projecth(vprime.map{|i| i[1]}) != v}
     raise HNDException.new(beta) if lloc
     return lloc
+  end
+
+  def checkWND
+    return unless @lastHApplication
+    (eta, pos) = @lastHApplication
+    qprime = @W.map{|w| @H[eta][w]} ## H(pi_h(a'))
+    puts "qprime = #{qprime}" if $DEBUG > 2
+    return unless qprime.all?{|o| o}
+    alphaprimebetaprime = @omega.slice(pos, @omega.length)
+    puts "alphaprimebetaprime = #{alphaprimebetaprime}" if $DEBUG > 2
+    (0..alphaprimebetaprime.length-2).map{|i| [alphaprimebetaprime.slice(0, i), alphaprimebetaprime.slice(i+1, alphaprimebetaprime.length)]}.reverse.each do |alphaprime, betaprime|
+      puts "(alpha, beta) = #{[alphaprime.map{|e| e[0].join}, betaprime.map{|e| e[0].join}]}" if $DEBUG > 2
+      pprime = @M.delta(qprime, @M.regs, alphaprime.map{|e| e[0]})  ## Delta(H(pi_h(a')), alpha)
+      next unless pprime
+      puts "pprime = #{pprime}" if $DEBUG > 2
+      betaPrimeIn = betaprime.map{|e| e[0]}
+      betaPrimeOut = betaprime.map{|e| e[1]}
+      alphaPrimeIn = alphaprime.map{|e| e[0]}
+      (0..@omegaIn.length-1).to_a.reverse
+        .select{|p| @omegaIn.slice(p, betaPrimeIn.length) == betaPrimeIn}
+        .select{|p| @omegaOut.slice(p, betaPrimeOut.length) != betaPrimeOut}
+        .select{|p| @C[p] and @C[p] == pprime}
+        .each do |p|
+          (0..p).to_a.reverse.each do |p1|
+            alphaIn = @omegaIn.slice(p1, p - p1)
+            found = alphaPrimeIn != alphaIn or eta != @LLoc.keys.find{|p2| p2 != p1}
+            self.printTrace
+            puts "betaPrimeIn = #{betaPrimeIn}" if found
+            raise WNDException.new(betaPrimeIn) if found
+          end
+      end
+    end
+  end
+  
+  def printTrace
+    (0..@omega.length-1).each do |i|
+      eta = @LLoc.keys.find{|eta| @LLoc[eta].include?(i)}
+      h = if eta then "(h/#{eta.join}) " else "" end
+
+      print "#{h}#{@omegaIn[i][0]}/#{@omegaOut[i][0]} "
+    end
+    puts "" 
   end
 
   def ehw
@@ -109,9 +156,11 @@ class EHW
         end
         w = @W.find{|w| not @H[eta][w]}
         if w
+          pos = @omega.length
           y = self.projectw(self.apply!(w))
           puts "w: #{w} / #{y}" if $DEBUG > 0
           @H[eta][w] = y
+          @C[pos] = @W.map{|w| @H[eta][w]}
         else
           q = @W.map{|w| @H[eta][w]}
           puts "q: #{q}"
@@ -136,11 +185,13 @@ class EHW
             @domDelta[qline][x] = {} unless @domDelta[qline][x]
             w = @W.find{|w| not @domDelta[qline][x][w]}
             if w
+              pos = @omega.length
               xi = self.projectw(self.apply!(w))
               puts "[x] w: #{w} / #{xi}" if $DEBUG > 0
               @domDelta[qline][x][w] = xi
               if not @W.find{|w| not @domDelta[qline][x][w]}
                 nq = @W.map{|w| @domDelta[qline][x][w]}
+                @C[pos] = nq
                 @M.states |= [nq]
                 @M.trans << {
                   from: qline,
@@ -173,8 +224,11 @@ class EHW
       r = @bb.steps!([s]).first
       res << r
       @omega << [s, r]
+      @omegaIn << s
+      @omegaOut << r
       @statesVisited << @bb.cur_state
       self.checkhND
+      self.checkWND
     end
     return res
   end

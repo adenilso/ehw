@@ -40,6 +40,19 @@ class EFSM
     return "#{@states} #{@s0} #{@regs} #{@trans}"
   end
 
+  def delta(state, regs, seq)
+    s = state
+    r = regs
+    seq.each do |input, pars|
+      (sprime, rprime, o, opars) = self.step(s, r, input, pars)
+      puts "#{[sprime, rprime, o, opars]}" if $DEBUG > 3
+      return nil if o == OMEGA
+      s = sprime
+      r = rprime
+    end
+    return s
+  end
+
   def step(state, regs, input, pars)
     applicable = @trans.select{|t| t[:from] == state and t[:input] == input and eval_expr(t[:guard], pars, regs)}
     if applicable.length == 0
