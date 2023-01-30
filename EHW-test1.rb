@@ -37,7 +37,8 @@ $runex.trans = [
 $ehw = EHW.new
 $ehw.bb = $m2
 $ehw.h = [["x", []], ["x", []]]
-$ehw.W = [[["x", []]]]
+$ehw.W = [[["x", []]], [["y", []]]]
+$ehw.W = [[["x", []]], [["y", []]]]
 $ehw.inputs = ["x", "y"] # 1 -> 10, 2 -> 00, 3 -> 10, 4 -> 01
 
 $DEBUG = 3
