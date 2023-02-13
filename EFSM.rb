@@ -94,7 +94,7 @@ class EFSM
     str = []
     str << "digraph M {"
     @states.each do |s|
-      str << "\"#{s}\"; // #{@cur_state}"
+      str << "\"#{s}\";"
     end
     @trans.each do |t|
       str << "\"#{t[:from]}\" -> \"#{t[:to]}\" [label=\"#{t[:input]}/#{t[:output]}\"]; "

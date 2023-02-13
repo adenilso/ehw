@@ -75,7 +75,6 @@ class EHW
       if x
         return [seq, [x, []], sts.first]
       else
-        puts "@inputs: #{@inputs}"
         @inputs.each do |x|
           trans = @M.trans.select{|t| t[:from] == sts.first and t[:input] == x}
           t = trans.first
@@ -104,17 +103,12 @@ class EHW
   def checkWND
     return unless @lastHApplication
     (eta, pos) = @lastHApplication
-    puts "(eta, pos) = (#{eta}, #{pos})"
     qprime = @W.map{|w| @H[eta][w]} ## H(pi_h(a'))
-    puts "qprime = #{qprime}" if $DEBUG > 2
     return unless qprime.all?{|o| o}
     alphaprimebetaprime = @omega.slice(pos, @omega.length)
-    puts "alphaprimebetaprime = #{alphaprimebetaprime}" if $DEBUG > 2
     (0..alphaprimebetaprime.length-1).map{|i| [alphaprimebetaprime.slice(0, i), alphaprimebetaprime.slice(i, alphaprimebetaprime.length)]}.reverse.each do |alphaprime, betaprime|
-      puts "(alphaprime, betaprime) = #{[alphaprime.map{|e| e[0].join}, betaprime.map{|e| e[0].join}]}" if $DEBUG > 2
       rprime = @M.delta(qprime, @M.regs, alphaprime.map{|e| e[0]})  ## Delta(H(pi_h(a')), alpha)
       next unless rprime and rprime.all?{|o| o}
-      puts "rprime = #{rprime}" if $DEBUG > 2
       betaPrimeIn = betaprime.map{|e| e[0]}
       betaPrimeOut = betaprime.map{|e| e[1]}
       alphaPrimeIn = alphaprime.map{|e| e[0]}
@@ -126,11 +120,9 @@ class EHW
           (0..p).to_a.reverse.each do |p1|
             alphaIn = @omegaIn.slice(p1, p - p1)
             e = @LLoc.keys.find{|e| @LLoc[e].include?(p1)}
-            puts "(#{alphaIn}, #{alphaPrimeIn}) (#{e}, #{eta})"
             found = alphaPrimeIn != alphaIn or eta != e
-            self.printTrace
-            puts "betaPrimeIn = #{betaPrimeIn} p = #{p} p1 = #{p1} qprime = #{qprime} @C[p] = #{@C[p]} rprime = #{rprime} alphaPrimeIn = #{alphaPrimeIn} alphaIn = #{alphaIn}" if found
-            puts self.conjecture_to_dot
+            self.printTrace if $DEBUG > 3
+            puts self.conjecture_to_dot if $DEBUG > 3
             raise WNDException.new(betaPrimeIn) if found and not @W.include?(betaPrimeIn)
           end
       end
@@ -170,7 +162,7 @@ class EHW
             @C[pos] = @W.map{|w| @H[eta][w]}
           else
             q = @W.map{|w| @H[eta][w]}
-            puts "q: #{q}"
+            puts "q: #{q}" if $DEBUG > 0
             @M.states |= [q]
             (alpha, x, qprime) = self.shorstestToUndef(q)
             puts "(alpha, x, qprime) = (#{alpha}, #{x}, #{qprime})" if $DEBUG > 0
@@ -227,29 +219,26 @@ class EHW
           puts $ehw.conjecture_to_dot.map{|str| "+++#{str}"} if $DEBUG > 3
           @W << e.w
           self.initM
-          sleep 5
         end
-        self.printTrace
       end
       puts $ehw.conjecture_to_dot.map{|str| "+++#{str}"} if $DEBUG > 3
       @M.positionCurrentState(@omega)
       eqOrCE = @bb.randomWalkUntilDiff(@M, 1000)
       if eqOrCE[:status] == "EQ"
-        puts "equiv? = #{@bb.equiv?(@M)}"
+        puts "equiv? = #{@bb.equiv?(@M)}" if $DEBUG > 3
         break
       elsif eqOrCE[:status] == "CE"
         seq = eqOrCE[:ce]
         (1..seq.length-1).each do |i|
           suffix = seq.slice(seq.length - i, seq.length)
           if not @W.include?(suffix)
-            puts "@W = #{@W} suffix = #{suffix}"
+            puts "@W = #{@W} suffix = #{suffix}" if $DEBUG > 3
             @W << suffix
             self.initM
             break
           end
         end
       end
-      sleep 5
     end
   end
 
