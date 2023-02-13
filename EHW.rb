@@ -131,7 +131,7 @@ class EHW
             self.printTrace
             puts "betaPrimeIn = #{betaPrimeIn} p = #{p} p1 = #{p1} qprime = #{qprime} @C[p] = #{@C[p]} rprime = #{rprime} alphaPrimeIn = #{alphaPrimeIn} alphaIn = #{alphaIn}" if found
             puts self.conjecture_to_dot
-            raise WNDException.new(betaPrimeIn) if found
+            raise WNDException.new(betaPrimeIn) if found and not @W.include?(betaPrimeIn)
           end
       end
     end
@@ -149,80 +149,107 @@ class EHW
   end
 
   def ehw
-    while not @M.complete?
-      begin
-        eta = self.projecth(self.apply!(@h))
-        @LLoc[eta] = [] unless @LLoc[eta]
-        @lastHApplication = [eta, @omega.length]
-        @LLoc[eta] << @omega.length
-        puts "eta: #{eta}" if $DEBUG > 0
-        if not @H[eta]
-          @H[eta] = {} 
-        end
-        @C[@omega.length] = @W.map{|w| @H[eta][w]}
-        w = @W.find{|w| not @H[eta][w]}
-        if w
-          pos = @omega.length
-          y = self.projectw(self.apply!(w))
-          puts "w: #{w} / #{y}" if $DEBUG > 0
-          @H[eta][w] = y
-          @C[pos] = @W.map{|w| @H[eta][w]}
-        else
-          q = @W.map{|w| @H[eta][w]}
-          puts "q: #{q}"
-          @M.states |= [q]
-          (alpha, x, qprime) = self.shorstestToUndef(q)
-          puts "(alpha, x, qprime) = (#{alpha}, #{x}, #{qprime})" if $DEBUG > 0
-          self.apply!(alpha)
-          @C[@omega.length] = qprime
-          y = self.apply!([x]).first
-          if y.first == OMEGA
-            puts "OMEGA!" if $DEBUG > 0
-            @M.trans << {
-              from: qprime,
-              to: qprime,
-              input: x.first,
-              output: y.first,
-              guard: true,
-              update: [],
-              outpars: [],
-            }
+    while true
+      while not @M.complete?
+        begin
+          eta = self.projecth(self.apply!(@h))
+          @LLoc[eta] = [] unless @LLoc[eta]
+          @lastHApplication = [eta, @omega.length]
+          @LLoc[eta] << @omega.length
+          puts "eta: #{eta}" if $DEBUG > 0
+          if not @H[eta]
+            @H[eta] = {} 
+          end
+          @C[@omega.length] = @W.map{|w| @H[eta][w]}
+          w = @W.find{|w| not @H[eta][w]}
+          if w
+            pos = @omega.length
+            y = self.projectw(self.apply!(w))
+            puts "w: #{w} / #{y}" if $DEBUG > 0
+            @H[eta][w] = y
+            @C[pos] = @W.map{|w| @H[eta][w]}
           else
-            @domDelta[qprime] = {} unless @domDelta[qprime]
-            @domDelta[qprime][x] = {} unless @domDelta[qprime][x]
-            w = @W.find{|w| not @domDelta[qprime][x][w]}
-            if w
-              pos = @omega.length
-              xi = self.projectw(self.apply!(w))
-              puts "[x] w: #{w} / #{xi}" if $DEBUG > 0
-              @domDelta[qprime][x][w] = xi
-              if not @W.find{|w| not @domDelta[qprime][x][w]}
-                nq = @W.map{|w| @domDelta[qprime][x][w]}
-                @C[pos] = nq
-                @M.states |= [nq]
-                @M.trans << {
-                  from: qprime,
-                  to: nq,
-                  input: x.first,
-                  output: y.first,
-                  guard: true,
-                  update: [],
-                  outpars: [],
-                }
+            q = @W.map{|w| @H[eta][w]}
+            puts "q: #{q}"
+            @M.states |= [q]
+            (alpha, x, qprime) = self.shorstestToUndef(q)
+            puts "(alpha, x, qprime) = (#{alpha}, #{x}, #{qprime})" if $DEBUG > 0
+            self.apply!(alpha)
+            @C[@omega.length] = qprime
+            y = self.apply!([x]).first
+            if y.first == OMEGA
+              puts "OMEGA!" if $DEBUG > 0
+              @M.trans << {
+                from: qprime,
+                to: qprime,
+                input: x.first,
+                output: y.first,
+                guard: true,
+                update: [],
+                outpars: [],
+              }
+            else
+              @domDelta[qprime] = {} unless @domDelta[qprime]
+              @domDelta[qprime][x] = {} unless @domDelta[qprime][x]
+              w = @W.find{|w| not @domDelta[qprime][x][w]}
+              if w
+                pos = @omega.length
+                xi = self.projectw(self.apply!(w))
+                puts "[x] w: #{w} / #{xi}" if $DEBUG > 0
+                @domDelta[qprime][x][w] = xi
+                if not @W.find{|w| not @domDelta[qprime][x][w]}
+                  nq = @W.map{|w| @domDelta[qprime][x][w]}
+                  @C[pos] = nq
+                  @M.states |= [nq]
+                  @M.trans << {
+                    from: qprime,
+                    to: nq,
+                    input: x.first,
+                    output: y.first,
+                    guard: true,
+                    update: [],
+                    outpars: [],
+                  }
+                end
               end
             end
           end
+        rescue HNDException => e
+          puts "**********************************************" if $DEBUG > 3
+          puts "newH #{e.h}" if $DEBUG > 3
+          puts $ehw.conjecture_to_dot.map{|str| "+++#{str}"} if $DEBUG > 3
+          @h += e.h
+          self.initM
+          #exit
+        rescue WNDException => e
+          puts "**********************************************" if $DEBUG > 3
+          puts "newW #{e.w}" if $DEBUG > 3
+          puts $ehw.conjecture_to_dot.map{|str| "+++#{str}"} if $DEBUG > 3
+          @W << e.w
+          self.initM
+          sleep 5
         end
-      rescue HNDException => e
-        puts "**********************************************" if $DEBUG > 3
-        puts "newH #{e.h}" if $DEBUG > 3
-        puts @omega.zip(@statesVisited).map{|e| "#{e[0][0].first}/#{e[0][1].first} [#{e[1]}]"}.join(" ") if $DEBUG > 3
-        puts $ehw.conjecture_to_dot.map{|str| "+++#{str}"} if $DEBUG > 3
-        @h += e.h
-        self.initM
-        #exit
+        self.printTrace
       end
-      self.printTrace
+      puts $ehw.conjecture_to_dot.map{|str| "+++#{str}"} if $DEBUG > 3
+      @M.positionCurrentState(@omega)
+      eqOrCE = @bb.randomWalkUntilDiff(@M, 1000)
+      if eqOrCE[:status] == "EQ"
+        puts "equiv? = #{@bb.equiv?(@M)}"
+        break
+      elsif eqOrCE[:status] == "CE"
+        seq = eqOrCE[:ce]
+        (1..seq.length-1).each do |i|
+          suffix = seq.slice(seq.length - i, seq.length)
+          if not @W.include?(suffix)
+            puts "@W = #{@W} suffix = #{suffix}"
+            @W << suffix
+            self.initM
+            break
+          end
+        end
+      end
+      sleep 5
     end
   end
 

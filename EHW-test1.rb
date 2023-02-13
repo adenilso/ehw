@@ -15,6 +15,24 @@ $m2.trans = [
   {from: 3, to: 3, input: "x", output: "1", update: [], outpars: [], guard: "true"},
   {from: 3, to: 0, input: "y", output: "1", update: [], outpars: [], guard: "true"},
 ]
+$m2.inputs = ["x", "y"]
+
+$m2 = EFSM.new
+$m2.states = [1, 2, 3, 4]
+$m2.s0 = 1
+$m2.regs = []
+$m2.cur_state = 1
+$m2.trans = [
+  {from: 1, to: 2, input: "a", output: "0", update: [], outpars: [], guard: "true"},
+  {from: 1, to: 1, input: "b", output: "0", update: [], outpars: [], guard: "true"},
+  {from: 2, to: 3, input: "a", output: "0", update: [], outpars: [], guard: "true"},
+  {from: 2, to: 1, input: "b", output: "0", update: [], outpars: [], guard: "true"},
+  {from: 3, to: 4, input: "a", output: "1", update: [], outpars: [], guard: "true"},
+  {from: 3, to: 2, input: "b", output: "0", update: [], outpars: [], guard: "true"},
+  {from: 4, to: 2, input: "a", output: "0", update: [], outpars: [], guard: "true"},
+  {from: 4, to: 3, input: "b", output: "1", update: [], outpars: [], guard: "true"},
+]
+$m2.inputs = ["a", "b"]
 
 # 0 x/0 1 x/1 2
 # 1 x/0 1 x/1 2
@@ -36,12 +54,15 @@ $runex.trans = [
 
 $ehw = EHW.new
 $ehw.bb = $m2
-$ehw.h = [["x", []], ["x", []]]
-$ehw.W = [[["x", []]], [["y", []]]]
-$ehw.W = [[["x", []]], [["y", []]]]
-$ehw.inputs = ["x", "y"] # 1 -> 10, 2 -> 00, 3 -> 10, 4 -> 01
+#$ehw.h = [["y", []], ["x", []]]
+#$ehw.h = [["x", []]]
+$ehw.h = []
+#$ehw.W = [[["x", []]], [["y", []]]]
+$ehw.W = [[["a", []]]]
+#$ehw.W = []
+$ehw.inputs = $m2.inputs # 1 -> 10, 2 -> 00, 3 -> 10, 4 -> 01
 
-$DEBUG = 3
+$DEBUG = 4
 
 $ehw.ehw
 

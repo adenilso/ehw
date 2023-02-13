@@ -20,7 +20,6 @@ def eval_expr(expr, inputs, regs)
 end
 
 class EFSM
-
   attr_accessor :trans
   attr_accessor :s0
   attr_accessor :regs
@@ -95,13 +94,70 @@ class EFSM
     str = []
     str << "digraph M {"
     @states.each do |s|
-      str << "\"#{s}\";"
+      str << "\"#{s}\"; // #{@cur_state}"
     end
     @trans.each do |t|
-      puts "#{t}"
       str << "\"#{t[:from]}\" -> \"#{t[:to]}\" [label=\"#{t[:input]}/#{t[:output]}\"]; "
     end
     str << "}"
     return str
+  end
+
+  def positionCurrentState(omega)
+    possibleStates = self.states
+    regs = []
+    omega.each do |x, y|
+      nPossibleStates = possibleStates.map{|s| self.step(s, regs, x[0], x[1])}.select{|r| r.slice(2, 2) == y}.map{|r| r[0]}
+      if nPossibleStates.length == 0
+        possibleStates = self.states
+      else
+        possibleStates = nPossibleStates
+      end
+    end
+    if possibleStates.length > 0
+      self.cur_state = possibleStates.first
+    end
+  end
+
+  def randomWalkUntilDiff(m1, steps)
+    res = []
+    regs = []
+    steps.times do
+      x = self.inputs.shuffle.first
+      res << [x, []]
+      y = self.step!(x, [])
+      yprime = m1.step!(x, [])
+      if y != yprime
+        return {status: "CE", ce: res}
+      end
+    end
+    return {status: "EQ"}
+  end
+
+  def equiv?(m1)
+    m = m1.clone
+    m1.states.each do |s0|
+      toProcess = []
+      toProcess << [@s0, s0]
+      processed = []
+      while toProcess.length > 0
+        s = toProcess.shift
+        processed << s
+        (s1, s2) = s
+        self.inputs.each do |x|
+          r1 = self.step(s1, [], x, [])
+          r2 = self.step(s2, [], x, [])
+          if r1[3] != r2[3]
+            return false
+          end
+          r = [r1[2], r2[2]]
+          if not processed.include?(r)
+            toProcess << r
+          end
+        end
+      end
+      return true
+    end
+    return false
   end
 end
