@@ -29,12 +29,12 @@ $m2.trans = [
 $m2.inputs = ["x", "y"]
 
 # ICGI2018_Groz_final.pdf, Fig1(a)
-$ICCI2018 = EFSM.new
-$ICCI2018.states = [1, 2, 3, 4]
-$ICCI2018.s0 = 1
-$ICCI2018.regs = []
-$ICCI2018.cur_state = 1
-$ICCI2018.trans = [
+$ICGI2018 = EFSM.new
+$ICGI2018.states = [1, 2, 3, 4]
+$ICGI2018.s0 = 1
+$ICGI2018.regs = []
+$ICGI2018.cur_state = 1
+$ICGI2018.trans = [
   {from: 1, to: 2, input: "a", output: "0", update: [], outpars: [], guard: "true"},
   {from: 1, to: 1, input: "b", output: "0", update: [], outpars: [], guard: "true"},
   {from: 2, to: 3, input: "a", output: "0", update: [], outpars: [], guard: "true"},
@@ -44,13 +44,16 @@ $ICCI2018.trans = [
   {from: 4, to: 2, input: "a", output: "0", update: [], outpars: [], guard: "true"},
   {from: 4, to: 3, input: "b", output: "1", update: [], outpars: [], guard: "true"},
 ]
-$ICCI2018.inputs = ["a", "b"]
+$ICGI2018.inputs = ["a", "b"]
+
+$m = $ICGI2018
 
 $ehw = EHW.new
-$ehw.bb = $ICCI2018
+$ehw.bb = $m
 $ehw.h = []
-$ehw.W = [[["b", []]]]
-$ehw.inputs = $ICCI2018.inputs 
+#$ehw.W = [[["b", []]]]
+$ehw.W = [[]]
+$ehw.inputs = $m.inputs 
 
 $DEBUG = 0
 
@@ -58,4 +61,4 @@ $ehw.ehw
 
 puts $ehw.conjecture_to_dot.map{|str| "+++#{str}"}
 
-puts $ICCI2018.to_dot.map{|str| "@@@#{str}"}
+puts $m.to_dot.map{|str| "@@@#{str}"}

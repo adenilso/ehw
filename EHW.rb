@@ -148,29 +148,29 @@ class EHW
           @LLoc[eta] = [] unless @LLoc[eta]
           @lastHApplication = [eta, @omega.length]
           @LLoc[eta] << @omega.length
-          puts "eta: #{eta}" if $DEBUG > 0
+          puts "eta: #{eta}" if $DEBUG > 1
           if not @H[eta]
             @H[eta] = {} 
           end
           @C[@omega.length] = @W.map{|w| @H[eta][w]}
           w = @W.find{|w| not @H[eta][w]}
-          if w
+          if w or @W.length == 0
             pos = @omega.length
             y = self.projectw(self.apply!(w))
-            puts "w: #{w} / #{y}" if $DEBUG > 0
+            puts "w: #{w} / #{y}" if $DEBUG > 1
             @H[eta][w] = y
             @C[pos] = @W.map{|w| @H[eta][w]}
           else
             q = @W.map{|w| @H[eta][w]}
-            puts "q: #{q}" if $DEBUG > 0
+            puts "q: #{q}" if $DEBUG > 1
             @M.states |= [q]
             (alpha, x, qprime) = self.shorstestToUndef(q)
-            puts "(alpha, x, qprime) = (#{alpha}, #{x}, #{qprime})" if $DEBUG > 0
+            puts "(alpha, x, qprime) = (#{alpha}, #{x}, #{qprime})" if $DEBUG > 1
             self.apply!(alpha)
             @C[@omega.length] = qprime
             y = self.apply!([x]).first
             if y.first == OMEGA
-              puts "OMEGA!" if $DEBUG > 0
+              puts "OMEGA!" if $DEBUG > 1
               @M.trans << {
                 from: qprime,
                 to: qprime,
@@ -184,10 +184,10 @@ class EHW
               @domDelta[qprime] = {} unless @domDelta[qprime]
               @domDelta[qprime][x] = {} unless @domDelta[qprime][x]
               w = @W.find{|w| not @domDelta[qprime][x][w]}
-              if w
+              if w or @W.length == 0
                 pos = @omega.length
                 xi = self.projectw(self.apply!(w))
-                puts "[x] w: #{w} / #{xi}" if $DEBUG > 0
+                puts "[x] w: #{w} / #{xi}" if $DEBUG > 1
                 @domDelta[qprime][x][w] = xi
                 if not @W.find{|w| not @domDelta[qprime][x][w]}
                   nq = @W.map{|w| @domDelta[qprime][x][w]}
@@ -207,19 +207,22 @@ class EHW
             end
           end
         rescue HNDException => e
-          puts "**********************************************" if $DEBUG > 3
-          puts "newH #{e.h}" if $DEBUG > 3
-          puts $ehw.conjecture_to_dot.map{|str| "+++#{str}"} if $DEBUG > 3
+          puts "**********************************************" if $DEBUG > 0
+          puts "newH #{e.h}" if $DEBUG > 0
+          puts $ehw.conjecture_to_dot.map{|str| "+++#{str}"} if $DEBUG > 0
           @h += e.h
           self.initM
           #exit
         rescue WNDException => e
-          puts "**********************************************" if $DEBUG > 3
-          puts "newW #{e.w}" if $DEBUG > 3
-          puts $ehw.conjecture_to_dot.map{|str| "+++#{str}"} if $DEBUG > 3
+          puts "**********************************************" if $DEBUG > 0
+          puts "newW #{e.w}" if $DEBUG > 0
+          puts $ehw.conjecture_to_dot.map{|str| "+++#{str}"} if $DEBUG > 0
           @W << e.w
+          @W = prefixFree(@W)
           self.initM
         end
+        self.printTrace if $DEBUG > 3
+        sleep 1 if $DEBUG > 4
       end
       puts $ehw.conjecture_to_dot.map{|str| "+++#{str}"} if $DEBUG > 3
       @M.positionCurrentState(@omega)
@@ -232,14 +235,20 @@ class EHW
         (1..seq.length-1).each do |i|
           suffix = seq.slice(seq.length - i, seq.length)
           if not @W.include?(suffix)
-            puts "@W = #{@W} suffix = #{suffix}" if $DEBUG > 3
+            puts "@W = #{@W} suffix = #{suffix}" if $DEBUG > 1
             @W << suffix
+            @W = prefixFree(@W)
             self.initM
             break
           end
         end
       end
     end
+    puts "equiv? #{@bb.equiv?(@M)}" if $DEBUG > 3
+  end
+
+  def prefixFree(seqs)
+    return seqs.select{|s| not seqs.any?{|s1| s.length < s1.length and s == s1.slice(0, s.length)}}
   end
 
   def steps!(ss)
