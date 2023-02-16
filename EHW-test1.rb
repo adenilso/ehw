@@ -39,12 +39,29 @@ $ICGI2018.trans = [
   {from: 1, to: 1, input: "b", output: "0", update: [], outpars: [], guard: "true"},
   {from: 2, to: 3, input: "a", output: "0", update: [], outpars: [], guard: "true"},
   {from: 2, to: 1, input: "b", output: "0", update: [], outpars: [], guard: "true"},
+  {from: 3, to: 4, input: "a", output: "1", update: [], outpars: [], guard: "true"},
+  {from: 3, to: 2, input: "b", output: "0", update: [], outpars: [], guard: "true"},
+  {from: 4, to: 2, input: "a", output: "0", update: [], outpars: [], guard: "true"},
+  {from: 4, to: 3, input: "b", output: "1", update: [], outpars: [], guard: "true"},
+]
+$ICGI2018.inputs = [ ["a", []], ["b", []] ]
+
+$ICGI2018Pars = EFSM.new
+$ICGI2018Pars.states = [1, 2, 3, 4]
+$ICGI2018Pars.s0 = 1
+$ICGI2018Pars.regs = []
+$ICGI2018Pars.cur_state = 1
+$ICGI2018Pars.trans = [
+  {from: 1, to: 2, input: "a", output: "0", update: [], outpars: [], guard: "true"},
+  {from: 1, to: 1, input: "b", output: "0", update: [], outpars: [], guard: "true"},
+  {from: 2, to: 3, input: "a", output: "0", update: [], outpars: [], guard: "true"},
+  {from: 2, to: 1, input: "b", output: "0", update: [], outpars: [], guard: "true"},
   {from: 3, to: 4, input: "a", output: "1", update: [], outpars: ["2*i0"], guard: "true"},
   {from: 3, to: 2, input: "b", output: "0", update: [], outpars: [], guard: "true"},
   {from: 4, to: 2, input: "a", output: "0", update: [], outpars: [], guard: "true"},
   {from: 4, to: 3, input: "b", output: "1", update: [], outpars: ["10*i0 + i1"], guard: "true"},
 ]
-$ICGI2018.inputs = [ ["a", [[101, 102]]], ["b", [[201,202,203], [10, 11]]] ]
+$ICGI2018Pars.inputs = [ ["a", [[101, 102]]], ["b", [[201,202,203], [10, 11]]] ]
 
 $m = $ICGI2018
 

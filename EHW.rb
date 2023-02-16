@@ -230,7 +230,9 @@ class EHW
       end
       puts $ehw.conjecture_to_dot.map{|str| "+++#{str}"} if $DEBUG > 3
       @M.positionCurrentState(@omega)
+      GP.computeEFSM!(@M)
       eqOrCE = @bb.randomWalkUntilDiff(@M, 1000)
+      puts "#{eqOrCE}"
       if eqOrCE[:status] == "EQ"
         puts "equiv? = #{@bb.equiv?(@M)}" if $DEBUG > 3
         break
