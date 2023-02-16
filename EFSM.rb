@@ -61,18 +61,20 @@ class EFSM
     else
       t = applicable.first
     puts "t: #{t}" if $DEBUG > 2
-      
+      opars = t[:outpars].map{|e| eval_expr(e, pars, regs)}
+      t[:concrete_parameters] = [] unless t[:concrete_parameters]
+      t[:concrete_parameters] |= [[pars, opars]]     
       return [
         t[:to], 
         t[:update].map{|e| eval_expr(e, pars, regs)}, 
         t[:output], 
-        t[:outpars].map{|e| eval_expr(e, pars, regs)}
+        opars
       ]
     end
   end
 
   def complete?
-    return (@states != [] and @states.all?{|s| @inputs.all?{|x| @trans.find{|t| t[:from] == s and t[:input] == x}}})
+    return (@states != [] and @states.all?{|s| @inputs.all?{|x| @trans.find{|t| t[:from] == s and t[:input] == x[0]}}})
   end
 
   def step!(input, pars)
@@ -124,9 +126,11 @@ class EFSM
     regs = []
     steps.times do
       x = self.inputs.shuffle.first
-      res << [x, []]
-      y = self.step!(x, [])
-      yprime = m1.step!(x, [])
+      i = x[0]
+      pars = x[1].map{|p| p.shuffle.first}
+      res << [i, pars]
+      y = self.step!(i, pars)
+      yprime = m1.step!(i, pars)
       if y != yprime
         return {status: "CE", ce: res}
       end
@@ -145,8 +149,10 @@ class EFSM
         processed << s
         (s1, s2) = s
         self.inputs.each do |x|
-          r1 = self.step(s1, [], x, [])
-          r2 = self.step(s2, [], x, [])
+          i = x[0]
+          pars = x[1].map{|p| p.shuffle.first}
+          r1 = self.step(s1, [], i, pars)
+          r2 = self.step(s2, [], i, pars)
           if r1[3] != r2[3]
             return false
           end

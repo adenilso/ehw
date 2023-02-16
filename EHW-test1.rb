@@ -26,7 +26,7 @@ $m2.trans = [
   {from: 3, to: 3, input: "x", output: "1", update: [], outpars: [], guard: "true"},
   {from: 3, to: 0, input: "y", output: "1", update: [], outpars: [], guard: "true"},
 ]
-$m2.inputs = ["x", "y"]
+$m2.inputs = [["x", []], ["y", []]]
 
 # ICGI2018_Groz_final.pdf, Fig1(a)
 $ICGI2018 = EFSM.new
@@ -39,12 +39,12 @@ $ICGI2018.trans = [
   {from: 1, to: 1, input: "b", output: "0", update: [], outpars: [], guard: "true"},
   {from: 2, to: 3, input: "a", output: "0", update: [], outpars: [], guard: "true"},
   {from: 2, to: 1, input: "b", output: "0", update: [], outpars: [], guard: "true"},
-  {from: 3, to: 4, input: "a", output: "1", update: [], outpars: [], guard: "true"},
+  {from: 3, to: 4, input: "a", output: "1", update: [], outpars: ["2*i0"], guard: "true"},
   {from: 3, to: 2, input: "b", output: "0", update: [], outpars: [], guard: "true"},
   {from: 4, to: 2, input: "a", output: "0", update: [], outpars: [], guard: "true"},
-  {from: 4, to: 3, input: "b", output: "1", update: [], outpars: [], guard: "true"},
+  {from: 4, to: 3, input: "b", output: "1", update: [], outpars: ["10*i0 + i1"], guard: "true"},
 ]
-$ICGI2018.inputs = ["a", "b"]
+$ICGI2018.inputs = [ ["a", [[101, 102]]], ["b", [[201,202,203], [10, 11]]] ]
 
 $m = $ICGI2018
 
@@ -55,7 +55,7 @@ $ehw.h = []
 $ehw.W = [[]]
 $ehw.inputs = $m.inputs 
 
-$DEBUG = 0
+$DEBUG = 5
 
 $ehw.ehw
 

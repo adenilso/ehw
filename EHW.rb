@@ -66,22 +66,26 @@ class EHW
     return outs.map{|e| e.first}
   end
 
-  def shorstestToUndef(q)
+  def shortestToUndef(q)
     toProcess = [[[q], []]]
     while toProcess != []
       puts "toProcess: #{toProcess}" if $DEBUG > 1
       (sts, seq) = toProcess.shift
-      x = @inputs.find{|x| not @M.trans.any?{|t| t[:from] == sts.first and t[:input] == x}}
+      x = @inputs.find{|x| not @M.trans.any?{|t| t[:from] == sts.first and t[:input] == x[0]}}
       if x
-        return [seq, [x, []], sts.first]
+        i = x[0]
+        pars = x[1].map{|p| p.shuffle.first}
+        return [seq, [i, pars], sts.first]
       else
         @inputs.each do |x|
-          trans = @M.trans.select{|t| t[:from] == sts.first and t[:input] == x}
+          trans = @M.trans.select{|t| t[:from] == sts.first and t[:input] == x[0]}
           t = trans.first
           qprime = t[:to]
           puts "qprime: #{qprime}" if $DEBUG > 1
           if not sts.include?(qprime)
-            toProcess << [[qprime] + sts, seq + [[x, []]]]
+            i = x[0]
+            pars = x[1].map{|p| p.shuffle.first}
+            toProcess << [[qprime] + sts, seq + [[i, pars]]]
           end
         end
       end
@@ -164,7 +168,7 @@ class EHW
             q = @W.map{|w| @H[eta][w]}
             puts "q: #{q}" if $DEBUG > 1
             @M.states |= [q]
-            (alpha, x, qprime) = self.shorstestToUndef(q)
+            (alpha, x, qprime) = self.shortestToUndef(q)
             puts "(alpha, x, qprime) = (#{alpha}, #{x}, #{qprime})" if $DEBUG > 1
             self.apply!(alpha)
             @C[@omega.length] = qprime
