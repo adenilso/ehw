@@ -52,7 +52,7 @@ class EFSM
     return s
   end
 
-  def step(state, regs, input, pars)
+  def step(state, regs, input, pars, store_concrete = true)
     applicable = @trans.select{|t| t[:from] == state and t[:input] == input and eval_expr(t[:guard], pars, regs)}
     if applicable.length == 0
       return [state, regs, OMEGA, []]
@@ -63,7 +63,9 @@ class EFSM
     puts "t: #{t}" if $DEBUG > 2
       opars = t[:outpars].map{|e| eval_expr(e, pars, regs)}
       t[:concrete_parameters] = [] unless t[:concrete_parameters]
-      t[:concrete_parameters] |= [[pars, opars]]     
+      if store_concrete
+        #t[:concrete_parameters] |= [[pars, opars]]     
+      end
       return [
         t[:to], 
         t[:update].map{|e| eval_expr(e, pars, regs)}, 
@@ -99,7 +101,14 @@ class EFSM
       str << "\"#{s}\";"
     end
     @trans.each do |t|
-      str << "\"#{t[:from]}\" -> \"#{t[:to]}\" [label=\"#{t[:input]}/#{t[:output]}\"]; "
+      input = "#{t[:input]}"
+      output = "#{t[:output]}"
+      if t[:outpars].length > 0
+        input += "(#{t[:outpars].join(" ").scan(/i\d+/).join(",")})"
+        output += "(#{t[:outpars].join(",")})"
+      end
+      inout = "#{input}/#{output}"
+      str << "\"#{t[:from]}\" -> \"#{t[:to]}\" [label=\"#{inout}\"]; "
     end
     str << "}"
     return str
@@ -109,7 +118,7 @@ class EFSM
     possibleStates = self.states
     regs = []
     omega.each do |x, y|
-      nPossibleStates = possibleStates.map{|s| self.step(s, regs, x[0], x[1])}.select{|r| r.slice(2, 2) == y}.map{|r| r[0]}
+      nPossibleStates = possibleStates.map{|s| self.step(s, regs, x[0], x[1], false)}.select{|r| r.slice(2, 2) == y}.map{|r| r[0]}
       if nPossibleStates.length == 0
         possibleStates = self.states
       else

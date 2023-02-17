@@ -10,6 +10,7 @@ $runex.trans = [
   {from: "s2", to: "s2", input: "coin", output: "Display", update: ["r0", "r1 + i0"], outpars: ["r1 + i0"], guard: "true"},
   {from: "s2", to: "s0", input: "vend", output: "Serv", update: ["r0", "r1"], outpars: ["r0"], guard: "true"},
 ]
+$runex.inputs = [ ["select", [] ], ["coin", [[50, 100]]], ["vend", ["coffee", "tea"]] ]
 
 $m2 = EFSM.new
 $m2.states = [0, 1, 2, 3]
@@ -52,18 +53,18 @@ $ICGI2018Pars.s0 = 1
 $ICGI2018Pars.regs = []
 $ICGI2018Pars.cur_state = 1
 $ICGI2018Pars.trans = [
-  {from: 1, to: 2, input: "a", output: "0", update: [], outpars: [], guard: "true"},
-  {from: 1, to: 1, input: "b", output: "0", update: [], outpars: [], guard: "true"},
-  {from: 2, to: 3, input: "a", output: "0", update: [], outpars: [], guard: "true"},
-  {from: 2, to: 1, input: "b", output: "0", update: [], outpars: [], guard: "true"},
-  {from: 3, to: 4, input: "a", output: "1", update: [], outpars: ["2*i0"], guard: "true"},
-  {from: 3, to: 2, input: "b", output: "0", update: [], outpars: [], guard: "true"},
-  {from: 4, to: 2, input: "a", output: "0", update: [], outpars: [], guard: "true"},
-  {from: 4, to: 3, input: "b", output: "1", update: [], outpars: ["10*i0 + i1"], guard: "true"},
+  {from: 1, to: 2, input: "a", output: "p", update: [], outpars: [], guard: "true"},
+  {from: 1, to: 1, input: "b", output: "p", update: [], outpars: [], guard: "true"},
+  {from: 2, to: 3, input: "a", output: "p", update: [], outpars: [], guard: "true"},
+  {from: 2, to: 1, input: "b", output: "p", update: [], outpars: [], guard: "true"},
+  {from: 3, to: 4, input: "a", output: "q", update: [], outpars: ["2*i0"], guard: "true"},
+  {from: 3, to: 2, input: "b", output: "p", update: [], outpars: [], guard: "true"},
+  {from: 4, to: 2, input: "a", output: "p", update: [], outpars: [], guard: "true"},
+  {from: 4, to: 3, input: "b", output: "q", update: [], outpars: ["10*i0+i1"], guard: "true"},
 ]
 $ICGI2018Pars.inputs = [ ["a", [[101, 102]]], ["b", [[201,202,203], [10, 11]]] ]
 
-$m = $ICGI2018
+$m = $ICGI2018Pars
 
 $ehw = EHW.new
 $ehw.bb = $m
@@ -72,10 +73,12 @@ $ehw.h = []
 $ehw.W = [[]]
 $ehw.inputs = $m.inputs 
 
-$DEBUG = 5
+$DEBUG = 4
 
 $ehw.ehw
 
 puts $ehw.conjecture_to_dot.map{|str| "+++#{str}"}
 
 puts $m.to_dot.map{|str| "@@@#{str}"}
+puts "h: #{$ehw.h.map{|x| "#{x[0]}(#{x[1].join(",")})"}.join(".")}"
+puts "W: {#{$ehw.W.map{|w| w.map{|x| "#{x[0]}(#{x[1].join(",")})"}.join(".")}.join(", ")}}"

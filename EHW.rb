@@ -205,6 +205,7 @@ class EHW
                     guard: true,
                     update: [],
                     outpars: [],
+                    concrete_parameters: [[x[1], y[1]]],
                   }
                 end
               end
