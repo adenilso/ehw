@@ -118,15 +118,15 @@ class EHW
       alphaPrimeIn = alphaprime.map{|e| e[0]}
       (0..@omegaIn.length-1).to_a.reverse
         .select{|p| @omegaIn.slice(p, betaPrimeIn.length) == betaPrimeIn}
-        .select{|p| @omegaOut.slice(p, betaPrimeOut.length) != betaPrimeOut}
+        .select{|p| self.projectw(@omegaOut.slice(p, betaPrimeOut.length)) != self.projectw(betaPrimeOut)}
         .select{|p| @C[p] and @C[p] == rprime}
         .each do |p|
           (0..p).to_a.reverse.each do |p1|
             alphaIn = @omegaIn.slice(p1, p - p1)
             e = @LLoc.keys.find{|e| @LLoc[e].include?(p1)}
             found = alphaPrimeIn != alphaIn or eta != e
-            self.printTrace if $DEBUG > 3
-            puts self.conjecture_to_dot if $DEBUG > 3
+            #self.printTrace if $DEBUG > 3
+            #puts self.conjecture_to_dot if $DEBUG > 3
             raise WNDException.new(betaPrimeIn) if found and not @W.include?(betaPrimeIn)
           end
       end
@@ -230,8 +230,8 @@ class EHW
         sleep 1 if $DEBUG > 4
       end
       puts $ehw.conjecture_to_dot.map{|str| "+++#{str}"} if $DEBUG > 3
-      @M.positionCurrentState(@omega)
       GP.computeEFSM!(@M)
+      @M.positionCurrentState(@omega)
       eqOrCE = @bb.randomWalkUntilDiff(@M, 1000)
       puts "#{eqOrCE}"
       if eqOrCE[:status] == "EQ"

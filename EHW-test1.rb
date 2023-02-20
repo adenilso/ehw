@@ -50,17 +50,17 @@ $ICGI2018.inputs = [ ["a", []], ["b", []] ]
 $ICGI2018Pars = EFSM.new
 $ICGI2018Pars.states = [1, 2, 3, 4]
 $ICGI2018Pars.s0 = 1
-$ICGI2018Pars.regs = []
+$ICGI2018Pars.regs = [0, 0]
 $ICGI2018Pars.cur_state = 1
 $ICGI2018Pars.trans = [
-  {from: 1, to: 2, input: "a", output: "p", update: [], outpars: [], guard: "true"},
-  {from: 1, to: 1, input: "b", output: "p", update: [], outpars: [], guard: "true"},
-  {from: 2, to: 3, input: "a", output: "p", update: [], outpars: [], guard: "true"},
-  {from: 2, to: 1, input: "b", output: "p", update: [], outpars: [], guard: "true"},
-  {from: 3, to: 4, input: "a", output: "q", update: [], outpars: ["2*i0"], guard: "true"},
-  {from: 3, to: 2, input: "b", output: "p", update: [], outpars: [], guard: "true"},
-  {from: 4, to: 2, input: "a", output: "p", update: [], outpars: [], guard: "true"},
-  {from: 4, to: 3, input: "b", output: "q", update: [], outpars: ["10*i0+i1"], guard: "true"},
+  {from: 1, to: 2, input: "a", output: "p", update: ["0",    "0"],    outpars: [],           guard: "true"},
+  {from: 1, to: 1, input: "b", output: "p", update: ["r0",   "r1"],    outpars: [],           guard: "true"},
+  {from: 2, to: 3, input: "a", output: "p", update: ["0",   "0"],   outpars: [],           guard: "true"},
+  {from: 2, to: 1, input: "b", output: "p", update: ["r0",   "r1"],   outpars: [],           guard: "true"},
+  {from: 3, to: 4, input: "a", output: "q", update: ["0",   "0"],   outpars: ["2*i0+r0"],     guard: "true"},
+  {from: 3, to: 2, input: "b", output: "p", update: ["r0", "r1"],   outpars: [],           guard: "true"},
+  {from: 4, to: 2, input: "a", output: "p", update: ["0",   "0"], outpars: [],           guard: "true"},
+  {from: 4, to: 3, input: "b", output: "q", update: ["r0+1",   "r1"],   outpars: ["10*i0+i1"], guard: "true"},
 ]
 $ICGI2018Pars.inputs = [ ["a", [[101, 102]]], ["b", [[201,202,203], [10, 11]]] ]
 
@@ -73,7 +73,7 @@ $ehw.h = []
 $ehw.W = [[]]
 $ehw.inputs = $m.inputs 
 
-$DEBUG = 4
+$DEBUG = 0
 
 $ehw.ehw
 

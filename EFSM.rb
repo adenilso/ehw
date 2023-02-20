@@ -1,6 +1,7 @@
 
 OMEGA = "#!OMEGA!#"
 ND = "#!ND!#"
+ERRORVAL = "#!ERROR!#"
 
 def eval_expr(expr, inputs, regs)
   res_expr = "#{expr}"
@@ -30,13 +31,13 @@ class EFSM
  def initialize
    @states = []
    @s0 = nil
-   @regs = []
+   self.regs = [] unless self.regs
    @trans = []
    @cur_state = []
   end 
 
   def to_s
-    return "#{@states} #{@s0} #{@regs} #{@trans}"
+    return "#{@states} #{@s0} #{self.regs} #{@trans}"
   end
 
   def delta(state, regs, seq)
@@ -60,15 +61,17 @@ class EFSM
       return [state, regs, ND, []]
     else
       t = applicable.first
-    puts "t: #{t}" if $DEBUG > 2
-      opars = t[:outpars].map{|e| eval_expr(e, pars, regs)}
+      puts "t: #{t}" if $DEBUG > 2
+      opars = t[:outpars].map{|e| begin eval_expr(e, pars, regs) rescue ERRORVAL end}
+      oregs = t[:update].map{|e| begin eval_expr(e, pars, regs) rescue ERRORVAL end}
+      #regs = t[:update].map{|e| eval_expr(e, pars, regs)}
       t[:concrete_parameters] = [] unless t[:concrete_parameters]
       if store_concrete
         #t[:concrete_parameters] |= [[pars, opars]]     
       end
       return [
         t[:to], 
-        t[:update].map{|e| eval_expr(e, pars, regs)}, 
+        oregs, 
         t[:output], 
         opars
       ]
@@ -80,8 +83,8 @@ class EFSM
   end
 
   def step!(input, pars)
-    res = step(@cur_state, @regs, input, pars) 
-    @regs = res[1]
+    res = step(@cur_state, self.regs, input, pars) 
+    self.regs = res[1]
     @cur_state = res[0]
     return [res[2], res[3]]
   end
@@ -107,6 +110,9 @@ class EFSM
         input += "(#{t[:outpars].join(" ").scan(/i\d+/).join(",")})"
         output += "(#{t[:outpars].join(",")})"
       end
+      if t[:update].length > 0
+        output += "[#{t[:update].join(",")}]"
+      end
       inout = "#{input}/#{output}"
       str << "\"#{t[:from]}\" -> \"#{t[:to]}\" [label=\"#{inout}\"]; "
     end
@@ -115,24 +121,27 @@ class EFSM
   end
 
   def positionCurrentState(omega)
-    possibleStates = self.states
-    regs = []
+    possibleStates = self.states.map{|s| [s, []]}
     omega.each do |x, y|
-      nPossibleStates = possibleStates.map{|s| self.step(s, regs, x[0], x[1], false)}.select{|r| r.slice(2, 2) == y}.map{|r| r[0]}
+      puts ">>#{__LINE__}>>#{possibleStates}" if $DEBUG > 3
+      nPossibleStates = possibleStates.map{|s, regs| self.step(s, regs, x[0], x[1], false)}.select{|r| r.slice(2, 2) == y}.map{|r| [r[0], r[1]]}
+      puts "<<#{__LINE__}<<#{nPossibleStates}" if $DEBUG > 3
       if nPossibleStates.length == 0
-        possibleStates = self.states
+        possibleStates = self.states.map{|s| [s, []]}
       else
         possibleStates = nPossibleStates
       end
     end
     if possibleStates.length > 0
-      self.cur_state = possibleStates.first
+      stateregs = possibleStates.first
+      self.cur_state = stateregs[0]
+      self.regs = stateregs[1]
     end
   end
 
   def randomWalkUntilDiff(m1, steps)
     res = []
-    regs = []
+    puts ">>>> #{self.regs} #{m1.regs}"
     steps.times do
       x = self.inputs.shuffle.first
       i = x[0]
@@ -160,8 +169,8 @@ class EFSM
         self.inputs.each do |x|
           i = x[0]
           pars = x[1].map{|p| p.shuffle.first}
-          r1 = self.step(s1, [], i, pars)
-          r2 = self.step(s2, [], i, pars)
+          r1 = self.step(s1, self.regs, i, pars)
+          r2 = self.step(s2, self.regs, i, pars)
           if r1[3] != r2[3]
             return false
           end
