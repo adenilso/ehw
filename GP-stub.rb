@@ -21,6 +21,7 @@ class GP
             lineout = ["10*i0+i1", "i0+2*i1"].shuffle.first
           end
         end
+        # Uncomment the next line to provide the output function
         #lineout = readline
         outpars = lineout
         t[:outpars] = outpars.split(",")
@@ -35,6 +36,8 @@ class GP
         lineup = ["r0,r1", "r0+2,r1", "r0+1,r1"].shuffle.first
         #lineup = ["r0+1,r1"].shuffle.first
       end
+      # Uncomment the next line to provide the output function
+      #lineup = readline
       regsup = lineup.split(",")
       t[:update] = regsup
       maxregs = [maxregs, regsup.length].max
